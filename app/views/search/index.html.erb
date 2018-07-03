@@ -15,7 +15,6 @@
   <% @artists.each do |artist| %>
     <%= content_tag :div, class: 'artist search result clearfix' do %>
       <h2>
-        <%= image_tag "http://ruby.elastic.co.s3-website-us-east-1.amazonaws.com/demo/music/bands/#{artist.id}.jpeg", height: '45px', class: 'band' %>
         <%= link_to artist do %>
           <span class="name"><%= highlighted(artist, :name) %></span>
           <small><%= pluralize artist.album_count, 'album' %></small>
@@ -41,12 +40,10 @@
   <% @albums.each do |album| %>
     <%= content_tag :div, class: 'album search result clearfix' do %>
       <h2>
-        <%= image_tag "http://ruby.elastic.co.s3-website-us-east-1.amazonaws.com/demo/music/covers/#{album.id}.jpeg", width: '45px', class: 'cover' %>
-        <%= link_to artist_path(album.artist_id, anchor: "album_#{album.id}") do %>
-          <span class="name"><%= highlighted(album, :title) %></span>
-          <small><%= album.artist %></small>
-          <small>(<%= [album.meta.formats.first, album.released].compact.join(' ') %>)</small>
-        <% end %>
+        <%= link_to artist_path album.artist_id do %>
+          <span class="name"><%= album.artist_name %></span>
+        <% end %> |
+        <span class="name"><%= highlighted(album, :title) %></span>
       </h2>
 
       <% if highlight = highlight(album, 'tracklist.title') %>
@@ -72,24 +69,4 @@
 </section>
 <% end %>
 
-<script>
-$.widget( "custom.suggest", $.ui.autocomplete, {
-    _renderMenu: function( ul, items ) {
-      $.each( items, function( index, item ) {
-        var category = ul.append( "<li class='ui-autocomplete-category'>" + item.label + "</li>" );
-
-        $.each( item.value, function( index, item ) {
-          var li = $('<li class="ui-autocomplete-item"><a href="<%= Rails.application.config.relative_url_root %>'+ item.url +'">'+ item.text +'</a></li>').data('ui-autocomplete-item', item )
-          category.append(li)
-        } )
-      });
-    }
-  });
-
-$( "#q" ).suggest({
-  source: '<%= suggest_path %>',
-  select: function(event, ui) {
-    document.location.href = '<%= Rails.application.config.relative_url_root %>'+ui.item.url
-  }
-});
-</script>
+<script>Search.init();</script>

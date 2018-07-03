@@ -4,3 +4,13 @@
 require_relative 'config/application'
 
 Rails.application.load_tasks
+
+namespace :setup do
+
+  desc "Create index"
+  task :index => :environment do
+    ArtistsAndAlbums.create_index!
+  rescue Elasticsearch::Transport::Transport::Errors::BadRequest => ex
+    raise unless ex.message =~ /resource_already_exists_exception/
+  end
+end

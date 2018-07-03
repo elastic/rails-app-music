@@ -1,7 +1,7 @@
 /*
+ *= require jquery-ui/autocomplete
  *= require_tree .
  *= require_self
- *= require ui-lightness/jquery-ui-1.10.4.custom.min.css
  */
 
 .clearfix {

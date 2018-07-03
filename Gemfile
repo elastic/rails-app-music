@@ -9,6 +9,8 @@ gem 'rails', '~> 5.2.0'
 gem 'puma', '~> 3.11'
 # Use SCSS for stylesheets
 # gem 'sass-rails', '~> 5.0'
+gem 'jquery-rails', '~> 4.3.3'
+gem 'jquery-ui-rails', '~> 6.0.1'
 # Use Uglifier as compressor for JavaScript assets
 # gem 'uglifier', '>= 1.3.0'
 # See https://github.com/rails/execjs#readme for more supported runtimes
@@ -59,10 +61,11 @@ gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 group :development do
   gem 'pry'
   gem 'pry-rails'
+  gem 'pry-byebug'
 end
 
 gem 'simple_form'
-gem 'elasticsearch', git: 'https://github.com/elastic/elasticsearch-ruby.git'
-gem 'elasticsearch-model', git: 'https://github.com/elastic/elasticsearch-rails.git', require: 'elasticsearch/model'
-gem 'elasticsearch-persistence', git: 'https://github.com/elastic/elasticsearch-rails.git', require: 'elasticsearch/persistence/model'
-gem 'elasticsearch-rails', git: 'https://github.com/elastic/elasticsearch-rails.git'
+gem 'elasticsearch'
+gem 'elasticsearch-model', git: 'https://github.com/elastic/elasticsearch-rails.git', branch: '5.x', require: 'elasticsearch/model'
+gem 'elasticsearch-persistence', git: 'https://github.com/elastic/elasticsearch-rails.git', branch: '5.x', require: 'elasticsearch/persistence/model'
+gem 'elasticsearch-rails', git: 'https://github.com/elastic/elasticsearch-rails.git', branch: '5.x'

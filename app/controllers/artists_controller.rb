@@ -17,9 +17,6 @@ class ArtistsController < ApplicationController
     @artist = Artist.new
   end
 
-  def edit
-  end
-
   def create
     @artist = Artist.new(artist_params)
 
@@ -56,11 +53,11 @@ class ArtistsController < ApplicationController
 
   private
     def set_artist
-      @artist = Artist.find(params[:id].split('-').first)
+      @artist = Artist.find(params[:id])
     end
 
     def artist_params
-      a = params.require(:artist)
+      a = params.require(:artist).permit(:name, :profile, :members, :'date(1i)', :'date(2i)', :'date(3i)')
       a[:members] = a[:members].split(/,\s?/) unless a[:members].is_a?(Array) || a[:members].blank?
       return a
     end

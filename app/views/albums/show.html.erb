@@ -3,6 +3,7 @@
     <h1>
       <span class="back"><%= link_to "〈".html_safe, artists_path, title: "Back" %></span>
       <%= @artist.name %>
+      <%= button_to 'Edit', edit_artist_path(@artist), method: 'get' %>
     </h1>
   </header>
 

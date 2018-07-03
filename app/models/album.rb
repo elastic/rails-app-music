@@ -1,54 +1,63 @@
-class Meta
-  include Virtus.model
-
-  attribute :rating
-  attribute :have
-  attribute :want
-  attribute :formats
-end
-
 class Album
   include Elasticsearch::Persistence::Model
 
-  index_name [Rails.application.engine_name, Rails.env].join('-')
+  document_type '_doc'
+  index_name ArtistsAndAlbums.index_name
+  class << self; delegate :create_index!, to: ArtistsAndAlbums; end
 
+  JOIN_TYPE = 'album'.freeze
+  ROUTING_RESPONSE_FIELD = '_routing'.freeze
 
-  mapping _parent: { type: 'artist' } do
-  end
-
-  attribute :artist
-  attribute :artist_id, String, mapping: { index: 'not_analyzed' }
+  attribute :artist, Object, mapping: { index: false }
+  attribute :artist_id, String, mapping: { index: false }
   attribute :label, Hash, mapping: { type: 'object' }
+  attribute :tracklist, Array, mapping: { type: 'object' }
 
   attribute :title
   attribute :released, Date
   attribute :notes
   attribute :uri
 
-  attribute :tracklist, Array, mapping: { type: 'object' }
 
-  attribute :styles
-  attribute :meta, Meta, mapping: { type: 'object' }
+  validates :title, presence: true
 
-  attribute :suggest, Hashie::Mash, mapping: {
-    type: 'object',
-    properties: {
-      title: {
-        type: 'object',
-        properties: {
-          input:   { type: 'completion' },
-          output:  { type: 'keyword', index: false },
-          payload: { type: 'object', enabled: false }
-        }
-      },
-      track: {
-        type: 'object',
-        properties: {
-          input:   { type: 'completion' },
-          output:  { type: 'keyword', index: false },
-          payload: { type: 'object', enabled: false }
-        }
+  attribute :album_suggest, Hashie::Mash, mapping: {
+      type: 'object',
+      properties: {
+          title: { type: 'completion' }
       }
-    }
   }
+
+  def to_hash
+    super.merge(join_field: { 'name' => JOIN_TYPE, 'parent' => artist.id }).tap do |hash|
+      hash.delete(:artist)
+      hash.delete(:artist_id)
+      hash.merge!(:album_suggest => { title: { input: [title] } })
+    end
+  end
+
+  def save(options = {})
+    return unless valid?
+    super(options.merge(routing: routing))
+  end
+
+  def routing
+    artist.id
+  end
+
+  def valid?(options={})
+    super
+    !!(artist && artist.id)
+  end
+
+  def artist_id
+    hit && hit[ROUTING_RESPONSE_FIELD]
+  rescue
+  end
+
+  def artist_name
+    Artist.find(artist_id).name
+  rescue
+    ''
+  end
 end

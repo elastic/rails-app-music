@@ -12,20 +12,16 @@ class Suggester
       body: {
         suggest: {
           artists: {
-            text: @term,
-            completion: { field: 'suggest.name.input', size: 25 }
+            prefix: @term,
+            completion: { field: 'artist_suggest.name', size: 25 }
           },
           members: {
-            text: @term,
-            completion: { field: 'suggest.member.input', size: 25 }
+              prefix: @term,
+              completion: { field: 'artist_suggest.members', size: 25 }
           },
           albums: {
             text: @term,
-            completion: { field: 'suggest.title.input', size: 25 }
-          },
-          tracks: {
-            text: @term,
-            completion: { field: 'suggest.track.input', size: 25 }
+            completion: { field: 'album_suggest.title', size: 25 }
           }
         },
         _source: ['suggest.*']
@@ -35,35 +31,61 @@ class Suggester
 
   def as_json(options={})
     return [] unless response['suggest']
+    json = []
 
-    output = [
-      { label: 'Bands',
-        value: response['suggest']['artists'][0]['options'].map do |d|
-          { text: d['_source']['suggest']['name']['output'],
-            url:  d['_source']['suggest']['name']['payload']['url'] }
+    if response['suggest']['artists']
+      artists = response['suggest']['artists'].inject({}) do |matches, suggestion|
+        suggestion['options'].each do |option|
+          matches[option['_id']] = option['text']
         end
-      },
+        matches
+      end
+      if !artists.empty?
+        json << { label: 'Bands',
+            value: artists.map do |d|
+              { text: d[1],
+                url:  "artists/#{d[0]}" }
+            end
+          }
 
-      { label: 'Albums',
-        value: response['suggest']['albums'][0]['options'].map do |d|
-          { text: d['_source']['suggest']['title']['output'],
-            url:  d['_source']['suggest']['title']['payload']['url'] }
-        end
-      },
+      end
+    end
 
-      { label: 'Band Members',
-        value: response['suggest']['members'][0]['options'].map do |d|
-          { text: "#{d['text']} (#{d['_source']['suggest']['member']['output']})",
-            url:  d['_source']['suggest']['member']['payload']['url'] }
+    if response['suggest']['members']
+      artists = response['suggest']['members'].inject({}) do |matches, suggestion|
+        suggestion['options'].each do |option|
+          matches[option['_id']] = option['text']
         end
-      },
+        matches
+      end
+      if !artists.empty?
+        json << { label: 'Band Members',
+                  value: artists.map do |d|
+                    { text: d[1],
+                      url:  "artists/#{d[0]}" }
+                  end
+        }
 
-      { label: 'Album Tracks',
-        value: response['suggest']['tracks'][0]['options'].map do |d|
-          { text: "#{d['text']} (#{d['_source']['suggest']['track']['output']})",
-            url:  d['_source']['suggest']['track']['payload']['url'] }
+      end
+    end
+
+    if response['suggest']['albums']
+      artists = response['suggest']['albums'].inject({}) do |matches, suggestion|
+        suggestion['options'].each do |option|
+          matches[option['_routing']] = option['text']
         end
-      }
-    ]
+        matches
+      end
+      if !artists.empty?
+        json << { label: 'Albums',
+                  value: artists.map do |d|
+                    { text: d[1],
+                      url:  "artists/#{d[0]}" }
+                  end
+        }
+
+      end
+    end
+    json
   end
 end
