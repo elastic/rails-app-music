@@ -60,3 +60,5 @@ group :development do
   gem 'pry'
   gem 'pry-rails'
 end
+
+gem 'simple_form'
