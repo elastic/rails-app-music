@@ -8,21 +8,21 @@ class Suggester
   def response
     @response ||= begin
       Elasticsearch::Persistence.client.search \
-      index: Artist.index_name,
+      index: Album.index_name,
       body: {
         suggest: {
-          artists: {
-            prefix: @term,
-            completion: { field: 'artist_suggest.name', size: 25 }
-          },
-          members: {
-              prefix: @term,
-              completion: { field: 'artist_suggest.members', size: 25 }
-          },
-          albums: {
-            text: @term,
-            completion: { field: 'album_suggest.title', size: 25 }
-          }
+            suggest_albums: {
+                prefix: @term,
+                completion: { field: 'suggest.album_title', size: 25 }
+            },
+            suggest_members: {
+                prefix: @term,
+                completion: { field: 'suggest.artist_members', size: 25 }
+            },
+            suggest_artists: {
+                prefix: @term,
+                completion: { field: 'suggest.artist_name', size: 25 }
+            }
         },
         _source: ['suggest.*']
       }
@@ -33,58 +33,49 @@ class Suggester
     return [] unless response['suggest']
     json = []
 
-    if response['suggest']['artists']
-      artists = response['suggest']['artists'].inject({}) do |matches, suggestion|
+    if response['suggest']['suggest_artists']
+      artists = response['suggest']['suggest_artists'].inject({}) do |matches, suggestion|
         suggestion['options'].each do |option|
-          matches[option['_id']] = option['text']
+          matches[option['_source']['suggest']['artist_name']['input'][1]] = option['text']
         end
         matches
-      end
-      if !artists.empty?
-        json << { label: 'Bands',
-            value: artists.map do |d|
-              { text: d[1],
-                url:  "artists/#{d[0]}" }
-            end
-          }
-
       end
     end
 
-    if response['suggest']['members']
-      artists = response['suggest']['members'].inject({}) do |matches, suggestion|
+    if response['suggest']['suggest_members']
+      artists.merge!(response['suggest']['suggest_members'].inject({}) do |matches, suggestion|
         suggestion['options'].each do |option|
-          matches[option['_id']] = option['text']
+          matches[option['_source']['suggest']['artist_name']['input'][1]] = option['_source']['suggest']['artist_name']['input'][0]
         end
         matches
-      end
-      if !artists.empty?
-        json << { label: 'Band Members',
-                  value: artists.map do |d|
-                    { text: d[1],
-                      url:  "artists/#{d[0]}" }
-                  end
-        }
+      end)
+    end
 
+    if !artists.empty?
+      json << { label: 'Bands',
+                value: artists.map do |id, name|
+                  { text: name,
+                    url:  "artists/#{id}" }
+                end }
+
+    end
+
+    if response['suggest']['suggest_albums']
+      albums = response['suggest']['suggest_albums'].inject({}) do |matches, suggestion|
+        suggestion['options'].each do |option|
+          matches[option['_source']['suggest']['artist_name']['input'][1]] = option['text']
+        end
+        matches
       end
     end
 
-    if response['suggest']['albums']
-      artists = response['suggest']['albums'].inject({}) do |matches, suggestion|
-        suggestion['options'].each do |option|
-          matches[option['_routing']] = option['text']
-        end
-        matches
-      end
-      if !artists.empty?
-        json << { label: 'Albums',
-                  value: artists.map do |d|
-                    { text: d[1],
-                      url:  "artists/#{d[0]}" }
-                  end
-        }
+    if !albums.empty?
+      json << { label: 'Albums',
+                value: albums.map do |id, name|
+                  { text: name,
+                    url:  "artists/#{id}" }
+                end }
 
-      end
     end
     json
   end

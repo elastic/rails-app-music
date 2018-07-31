@@ -9,7 +9,8 @@ namespace :setup do
 
   desc "Create index"
   task :index => :environment do
-    ArtistsAndAlbums.create_index!
+    Artist.create_index!(force: true)
+    Album.create_index!(force: true)
   rescue Elasticsearch::Transport::Transport::Errors::BadRequest => ex
     raise unless ex.message =~ /resource_already_exists_exception/
   end

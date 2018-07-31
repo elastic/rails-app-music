@@ -2,47 +2,34 @@ class Album
   include Elasticsearch::Persistence::Model
 
   document_type '_doc'
-  index_name ArtistsAndAlbums.index_name
-  class << self; delegate :create_index!, to: ArtistsAndAlbums; end
+  index_name 'artists_and_albums'
 
-  JOIN_TYPE = 'album'.freeze
-  ROUTING_RESPONSE_FIELD = '_routing'.freeze
+  attribute :artist
+  attribute :artist_id, String, mapping: { type: 'keyword' }
 
-  attribute :artist, Object, mapping: { index: false }
-  attribute :artist_id, String, mapping: { index: false }
-  attribute :label, Hash, mapping: { type: 'object' }
-  attribute :tracklist, Array, mapping: { type: 'object' }
-
-  attribute :title
+  attribute :title, String, mapping: { type: 'keyword' }
   attribute :released, Date
-  attribute :notes
-  attribute :uri
-
 
   validates :title, presence: true
 
-  attribute :album_suggest, Hashie::Mash, mapping: {
+  attribute :suggest, Hashie::Mash, mapping: {
       type: 'object',
       properties: {
-          title: { type: 'completion' }
+          album_title: { type: 'completion' },
+          artist_name: { type: 'completion' },
+          artist_members: { type: 'completion' }
       }
   }
 
   def to_hash
-    super.merge(join_field: { 'name' => JOIN_TYPE, 'parent' => artist.id }).tap do |hash|
+    super.tap do |hash|
       hash.delete(:artist)
-      hash.delete(:artist_id)
-      hash.merge!(:album_suggest => { title: { input: [title] } })
+      hash.merge!(artist_id: artist.id)
+      suggest = { album_title: { input: [title] } }
+      suggest[:artist_name] = { input: [artist.name, artist.id] }
+      suggest[:artist_members] = { input: artist.members.collect(&:strip) }
+      hash.merge!(:suggest => suggest)
     end
-  end
-
-  def save(options = {})
-    return unless valid?
-    super(options.merge(routing: routing))
-  end
-
-  def routing
-    artist.id
   end
 
   def valid?(options={})
@@ -51,13 +38,21 @@ class Album
   end
 
   def artist_id
-    hit && hit[ROUTING_RESPONSE_FIELD]
-  rescue
+    @artist_id || (@artist && @artist.id)
+  end
+
+  def artist
+    @artist || (artist_id && Artist.find(artist_id))
   end
 
   def artist_name
-    Artist.find(artist_id).name
+    (artist && artist.name) || Artist.find(artist_id).name
   rescue
     ''
+  end
+
+  def self.all(options = {})
+    Album.search({ query: { match_all: { }}},
+                   sort: 'title')
   end
 end
