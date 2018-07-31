@@ -24,10 +24,6 @@ class AlbumsController < ApplicationController
     end
   end
 
-  def show
-    @artist = @album.artist
-  end
-
   private
 
   def album_params

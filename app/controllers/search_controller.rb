@@ -9,8 +9,7 @@ class SearchController < ApplicationController
                   "multi_match": { "query": params[:q],
                                    "fields": ['name^10','members^2','profile']
                                  }
-              },
-              "filter": { match: { join_field: Artist::JOIN_TYPE }}
+              }
           }
       },
       highlight: {
@@ -28,10 +27,7 @@ class SearchController < ApplicationController
         "bool": {
                  "must": { "multi_match": {
                              "query": params[:q],
-                             "fields": ['title^100','tracklist.title^10','notes^1'] } },
-                 "filter": {
-                   has_parent: { "parent_type": Artist::JOIN_TYPE,
-                                 "query": { match_all: {} }} }
+                             "fields": ['title^100','tracklist.title^10','notes^1'] } }
           }
       },
       highlight: {
