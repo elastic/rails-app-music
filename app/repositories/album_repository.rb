@@ -18,4 +18,10 @@ class AlbumRepository
         }
     }
   end
+
+  def deserialize(document)
+    album = super
+    album.id = document['_id']
+    album
+  end
 end

@@ -23,4 +23,10 @@ class ArtistRepository
         }
     }
   end
+
+  def deserialize(document)
+    artist = super
+    artist.id = document['_id']
+    artist
+  end
 end
