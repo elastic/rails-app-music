@@ -1,6 +1,20 @@
 class Album
+  class Validator < ActiveModel::Validator
+
+    ERROR_MESSAGE = 'An album must be associated with an artist.'.freeze
+
+    def validate(album)
+      unless album.title && album.artist && album.artist.persisted?
+        album.errors.add(:base, ERROR_MESSAGE)
+      end
+    end
+  end
+end
+
+class Album
   include ActiveModel::Model
   include ActiveModel::Validations
+  validates_with Validator
 
   ATTRIBUTES = [:id,
                 :artist,

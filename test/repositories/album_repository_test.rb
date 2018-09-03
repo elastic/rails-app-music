@@ -63,4 +63,18 @@ class AlbumRepositoryTest < ActiveSupport::TestCase
     assert @repository.save(album)
     assert @repository.find(@repository.save(album)['_id']).is_a?(Album)
   end
+
+  test 'AlbumRepository #serialize' do
+    artist = Artist.new(id: 1, name: 'Common')
+    album = Album.new(title: 'Like Water for Chocolate',
+                      artist: artist,
+                      tracklist: [' The Light ', ' The Questions '],
+                      label: 'MCA')
+    doc = @repository.serialize(album)
+    assert doc[:artist].nil?
+    assert doc[:artist_id] == 1
+    assert doc[:tracklist] == [' The Light ' , ' The Questions ']
+    assert doc[:album_suggest][:title] == { input: ['Like Water for Chocolate'] }
+    assert doc[:album_suggest][:tracklist] == { input: ['The Light', 'The Questions'] }
+  end
 end

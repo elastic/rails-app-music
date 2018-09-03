@@ -27,6 +27,16 @@ class AlbumRepository
     count(query: { match: { artist_id: artist.id } })
   end
 
+  def serialize(album)
+    album.validate!
+    album.to_hash.tap do |hash|
+      hash.merge!(artist_id: album.artist.id)
+      suggest = { title: { input: [hash[:title]] } }
+      suggest[:tracklist] = { input: hash[:tracklist].collect(&:strip) } if hash[:tracklist].present?
+      hash.merge!(:album_suggest => suggest)
+    end
+  end
+
   def all(options = {})
     search({ query: { match_all: { } } },
            { sort: 'title' }.merge(options))
