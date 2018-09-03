@@ -16,7 +16,7 @@
       <h2>
         <%= link_to artist do %>
           <span class="name"><%= artist.name %></span>
-          <small><%= pluralize artist.album_count, 'album' %></small>
+          <small><%= pluralize $album_repository.album_count_by_artist(artist), 'album' %></small>
         <% end %>
       </h2>
     <% end %>

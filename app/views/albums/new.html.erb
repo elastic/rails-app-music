@@ -1,6 +1,6 @@
 
 <%= simple_form_for @album do |f| %>
-  <%= f.collection_select :artist, Artist.all, :id, :name %>
+  <%= f.collection_select :artist, $artist_repository.all, :id, :name %>
   <%= f.input :title %>
 
   <%= f.button :submit %>
