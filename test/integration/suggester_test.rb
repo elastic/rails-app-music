@@ -3,23 +3,29 @@ require 'test_helper'
 class SuggesterTest < ActiveSupport::TestCase
 
   setup do
-    Artist.create_index!(force: true)
-    Album.create_index!(force: true)
-    @artist = Artist.create(name: 'Common', members: ['Nick', 'Larry'], refresh: true)
-    @album = Album.create({ title: 'Like Water for Chocolate', artist: @artist }, refresh: true)
+    @album_repository = AlbumRepository.new(client: DEFAULT_CLIENT)
+    @artist_repository = ArtistRepository.new(client: DEFAULT_CLIENT)
+    @artist_repository.create_index!(force: true)
+    @album_repository.create_index!(force: true)
+
+    @artist = Artist.new(name: 'Common', members: ['Nick', 'Larry'])
+    @artist.id = @artist_repository.save(@artist, refresh: true)['_id']
+    @album = Album.new({ title: 'Like Water for Chocolate', artist: @artist })
+    @album.id = @album_repository.save(@album, refresh: true)['_id']
   end
 
   teardown do
     begin
-      Artist.gateway.delete_index!
-      Album.gateway.delete_index!
+      @artist_repository.delete_index!
+      @album_repository.delete_index!
     rescue
     end
   end
 
   test "Suggester with results by Artist name" do
     suggester = Suggester.new(term: 'co')
-    bands = suggester.as_json.find { |hash| hash[:label] == "Bands" }[:value]
+    suggester.execute!(@artist_repository, @album_repository)
+    bands = suggester.as_json(@artist_repository).find { |hash| hash[:label] == "Matches" }[:value]
     assert bands.size == 1
     assert bands[0][:url] == "artists/#{@artist.id}"
     assert bands[0][:text] == "Common"
@@ -27,7 +33,8 @@ class SuggesterTest < ActiveSupport::TestCase
 
   test "Suggester with results by Album title" do
     suggester = Suggester.new(term: 'Lik')
-    bands = suggester.as_json.find { |hash| hash[:label] == "Albums" }[:value]
+    suggester.execute!(@artist_repository, @album_repository)
+    bands = suggester.as_json.find { |hash| hash[:label] == "Matches" }[:value]
     assert bands.size == 1
     assert bands[0][:url] == "artists/#{@artist.id}"
     assert bands[0][:text] == "Like Water for Chocolate"
@@ -35,9 +42,24 @@ class SuggesterTest < ActiveSupport::TestCase
 
   test "Suggester with results by Member name" do
     suggester = Suggester.new(term: 'Nic')
-    bands = suggester.as_json.find { |hash| hash[:label] == "Bands" }[:value]
+    suggester.execute!(@artist_repository, @album_repository)
+    bands = suggester.as_json.find { |hash| hash[:label] == "Matches" }[:value]
     assert bands.size == 1
     assert bands[0][:url] == "artists/#{@artist.id}"
-    assert bands[0][:text] == "Common"
+    assert bands[0][:text] == "Nick"
+  end
+
+  test 'Suggester with results for both artist and album' do
+    @album = Album.new({ title: 'Coorporate', artist: @artist })
+    @album.id = @album_repository.save(@album, refresh: true)['_id']
+
+    suggester = Suggester.new(term: 'Co')
+    suggester.execute!(@artist_repository, @album_repository)
+    bands = suggester.as_json.select { |hash| hash[:label] == "Matches" }
+    assert bands.size == 2
+    assert bands[0][:value][0][:url] == "artists/#{@artist.id}"
+    assert bands[1][:value][0][:url] == "artists/#{@artist.id}"
+    assert bands[0][:value][0][:text] == "Common"
+    assert bands[1][:value][0][:text] == "Coorporate"
   end
 end
