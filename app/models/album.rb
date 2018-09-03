@@ -1,58 +1,49 @@
 class Album
-  include Elasticsearch::Persistence::Model
+  include ActiveModel::Model
+  include ActiveModel::Validations
 
-  document_type '_doc'
-  index_name 'artists_and_albums'
-
-  attribute :artist
-  attribute :artist_id, String, mapping: { type: 'keyword' }
-
-  attribute :title, String, mapping: { type: 'keyword' }
-  attribute :released, Date
-
+  ATTRIBUTES = [:id,
+                :artist,
+                :label,
+                :tracklist,
+                :title,
+                :released,
+                :notes]
+  attr_accessor(*ATTRIBUTES)
   validates :title, presence: true
 
-  attribute :suggest, Hashie::Mash, mapping: {
-      type: 'object',
-      properties: {
-          album_title: { type: 'completion' },
-          artist_name: { type: 'completion' },
-          artist_members: { type: 'completion' }
-      }
-  }
-
-  def to_hash
-    super.tap do |hash|
-      hash.delete(:artist)
-      hash.merge!(artist_id: artist.id)
-      suggest = { album_title: { input: [title] } }
-      suggest[:artist_name] = { input: [artist.name, artist.id] }
-      suggest[:artist_members] = { input: artist.members.collect(&:strip) }
-      hash.merge!(:suggest => suggest)
+  def initialize(attr={})
+    attr.each do |k,v|
+      if ATTRIBUTES.include?(k.to_sym)
+        send("#{k}=", v)
+      end
     end
+  end
+
+  def attributes
+    ATTRIBUTES.inject({}) do |hash, attr|
+      if attr != :artist && value = send(attr)
+        hash[attr] = value
+      end
+      hash
+    end
+  end
+  alias :to_hash :attributes
+
+  def id
+    @id || @_id
+  end
+
+  def to_param
+    id
+  end
+
+  def persisted?
+    !!id
   end
 
   def valid?(options={})
     super
     !!(artist && artist.id)
-  end
-
-  def artist_id
-    @artist_id || (@artist && @artist.id)
-  end
-
-  def artist
-    @artist || (artist_id && Artist.find(artist_id))
-  end
-
-  def artist_name
-    (artist && artist.name) || Artist.find(artist_id).name
-  rescue
-    ''
-  end
-
-  def self.all(options = {})
-    Album.search({ query: { match_all: { }}},
-                   sort: 'title')
   end
 end
