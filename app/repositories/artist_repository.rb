@@ -29,6 +29,15 @@ class ArtistRepository
            { sort: 'name.raw' }.merge(options))
   end
 
+  def serialize(artist)
+    artist.validate!
+    artist.to_hash.tap do |hash|
+      suggest = { name: { input: [ hash[:name] ] } }
+      suggest[:members] = { input: hash[:members].collect(&:strip) } if hash[:members].present?
+      hash.merge!(:artist_suggest => suggest)
+    end
+  end
+
   def artist_name(album)
     find(album.artist_id).name
   end

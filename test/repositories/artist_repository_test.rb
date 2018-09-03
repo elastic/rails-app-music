@@ -43,4 +43,18 @@ class ArtistRepositoryTest < ActiveSupport::TestCase
     @repository.save(artist_two, refresh: true)
     assert @repository.all.collect(&:name) == ['Common', 'FKA Twigs']
   end
+
+  test "ArtistRepository #save with Artist validation" do
+    artist = Artist.new(profile: 'etc etc', members: ['Jack', 'Larry'])
+    assert_raises(ActiveModel::ValidationError) { @repository.save(artist) }
+  end
+
+  test 'ArtistRepository #serialize' do
+    artist = Artist.new(id: 1, name: 'Common', members: [' Jack ', ' Larry '])
+    doc = @repository.serialize(artist)
+    assert doc[:name] == 'Common'
+    assert doc[:members] == [' Jack ', ' Larry ']
+    assert doc[:artist_suggest][:name] == { input: ['Common'] }
+    assert doc[:artist_suggest][:members] == { input: ['Jack', 'Larry'] }
+  end
 end

@@ -13,6 +13,8 @@ class Artist
   attr_accessor(*ATTRIBUTES)
   attr_reader :attributes
 
+  validates :name, presence: true
+
   def initialize(attr={})
     attr.each do |k,v|
       if ATTRIBUTES.include?(k.to_sym)
