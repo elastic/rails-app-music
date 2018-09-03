@@ -32,4 +32,21 @@ class Artist
     end
   end
   alias :to_hash :attributes
+
+  def id
+    @id || @_id
+  end
+
+  def to_param
+    id
+  end
+
+  def persisted?
+    !!id
+  end
+
+  def members(mems = nil)
+    return @members = mems if mems
+    @members ||= []
+  end
 end
