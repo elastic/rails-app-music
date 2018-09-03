@@ -1,49 +1,33 @@
 class Artist
-  include Elasticsearch::Persistence::Model
+  include ActiveModel::Model
+  include ActiveModel::Validations
 
-  document_type '_doc'
-  index_name 'artists'
+  ATTRIBUTES = [:name,
+                :id,
+                :_id,
+                :profile,
+                :date,
+                :members,
+                :members_combined,
+                :urls]
+  attr_accessor(*ATTRIBUTES)
+  attr_reader :attributes
 
-  analyzed_and_raw = { fields: {
-    name: { type: 'text', analyzer: 'snowball' },
-    raw:  { type: 'keyword' }
-  } }
-
-  def to_hash
-    super.tap do |hash|
-      suggest = { name: { input: [name] } }
-      suggest.merge!(members: { input: members.collect(&:strip) }) if members.present?
-      hash.merge!(:artist_suggest => suggest)
+  def initialize(attr={})
+    attr.each do |k,v|
+      if ATTRIBUTES.include?(k.to_sym)
+        send("#{k}=", v)
+      end
     end
   end
 
-  attribute :name, String, mapping: analyzed_and_raw
-  attribute :profile
-  attribute :members, String, default: [], mapping: analyzed_and_raw
-  attribute :artist_suggest, Hashie::Mash, mapping: {
-      type: 'object',
-      properties: {
-          name: { type: 'completion' },
-          members: { type: 'completion' }
-      }
-  }
-
-  validates :name, presence: true
-
-  def albums
-    Album.search(query: { match: { artist_id: self.id } })
+  def attributes
+    ATTRIBUTES.inject({}) do |hash, attr|
+      if value = send(attr)
+        hash[attr] = value
+      end
+      hash
+    end
   end
-
-  def album_count
-    albums.size
-  end
-
-  def to_param
-    id
-  end
-
-  def self.all(options = {})
-    Artist.search({ query: { match_all: { } } },
-                  sort: 'name.raw')
-  end
+  alias :to_hash :attributes
 end
