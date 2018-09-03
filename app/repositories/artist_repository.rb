@@ -29,6 +29,25 @@ class ArtistRepository
            { sort: 'name.raw' }.merge(options))
   end
 
+  def artist_name(album)
+    find(album.artist_id).name
+  end
+
+  def suggest_body(term)
+    {
+        suggest: {
+            artist_names: {
+                prefix: term,
+                completion: { field: 'artist_suggest.name', size: 25 }
+            },
+            artist_members: {
+                prefix: term,
+                completion: { field: 'artist_suggest.members', size: 25 }
+            }
+        }
+    }
+  end
+
   def deserialize(document)
     artist = super
     artist.id = document['_id']

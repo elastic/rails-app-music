@@ -19,9 +19,32 @@ class AlbumRepository
     }
   end
 
+  def albums_by_artist(artist)
+    search(query: { match: { artist_id: artist.id } })
+  end
+
+  def album_count_by_artist(artist)
+    count(query: { match: { artist_id: artist.id } })
+  end
+
   def all(options = {})
     search({ query: { match_all: { } } },
            { sort: 'title' }.merge(options))
+  end
+
+  def suggest_body(term)
+    {
+        suggest: {
+            album_title: {
+                prefix: term,
+                completion: { field: 'album_suggest.title', size: 25 }
+            },
+            album_tracklists: {
+                prefix: term,
+                completion: { field: 'album_suggest.tracklist', size: 25 }
+            }
+        }
+    }
   end
 
   def deserialize(document)
