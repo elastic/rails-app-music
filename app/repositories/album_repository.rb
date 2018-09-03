@@ -19,6 +19,11 @@ class AlbumRepository
     }
   end
 
+  def all(options = {})
+    search({ query: { match_all: { } } },
+           { sort: 'title' }.merge(options))
+  end
+
   def deserialize(document)
     album = super
     album.id = document['_id']

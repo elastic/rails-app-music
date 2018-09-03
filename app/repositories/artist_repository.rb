@@ -24,6 +24,11 @@ class ArtistRepository
     }
   end
 
+  def all(options = {})
+    search({ query: { match_all: { } } },
+           { sort: 'name.raw' }.merge(options))
+  end
+
   def deserialize(document)
     artist = super
     artist.id = document['_id']
