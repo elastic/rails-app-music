@@ -6,11 +6,11 @@ class ArtistsController < ApplicationController
   end
 
   def index
-    @artists = Artist.all sort: 'name.raw', _source: ['name', 'album_count']
+    @artists = $artist_repository.all sort: 'name.raw'
   end
 
   def show
-    @albums = @artist.albums
+    @albums = $album_repository.albums_by_artist(@artist)
   end
 
   def new
@@ -21,7 +21,7 @@ class ArtistsController < ApplicationController
     @artist = Artist.new(artist_params)
 
     respond_to do |format|
-      if @artist.save refresh: true
+      if begin; @artist.id = $artist_repository.save(@artist, refresh: true)['_id']; rescue; false; end
         format.html { redirect_to @artist, notice: 'Artist was successfully created.' }
         format.json { render :show, status: :created, location: @artist }
       else
@@ -31,20 +31,8 @@ class ArtistsController < ApplicationController
     end
   end
 
-  def update
-    respond_to do |format|
-      if @artist.update(artist_params, refresh: true)
-        format.html { redirect_to @artist, notice: 'Artist was successfully updated.' }
-        format.json { render :show, status: :ok, location: @artist }
-      else
-        format.html { render :edit }
-        format.json { render json: @artist.errors, status: :unprocessable_entity }
-      end
-    end
-  end
-
   def destroy
-    @artist.destroy refresh: true
+    @artist_repository.delete(@artist.id, refresh: true)
     respond_to do |format|
       format.html { redirect_to artists_url, notice: 'Artist was successfully destroyed.' }
       format.json { head :no_content }
@@ -53,7 +41,7 @@ class ArtistsController < ApplicationController
 
   private
     def set_artist
-      @artist = Artist.find(params[:id])
+      @artist = $artist_repository.find(params[:id])
     end
 
     def artist_params

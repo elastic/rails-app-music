@@ -10,11 +10,11 @@ class AlbumsController < ApplicationController
 
   def create
     @album = Album.new(album_params)
-    artist = Artist.find(album_params[:artist])
+    artist = $artist_repository.find(album_params[:artist])
     @album.artist = artist if artist
 
     respond_to do |format|
-      if @album.save refresh: true
+      if begin; @album.id = $album_repository.save(@album, refresh: true)['_id']; rescue; false; end
         format.html { redirect_to artist, notice: 'Album was successfully created.' }
         format.json { render :show, status: :created, location: @album }
       else

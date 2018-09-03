@@ -2,7 +2,7 @@ class SearchController < ApplicationController
 
   def index
 
-    @artists = Artist.search({
+    @artists = $artist_repository.search({
       "query": {
           "bool": {
               "must": {
@@ -22,7 +22,7 @@ class SearchController < ApplicationController
       }
     })
 
-    @albums = Album.search({
+    @albums = $album_repository.search({
       "query": {
         "bool": {
                  "must": { "multi_match": {
@@ -42,6 +42,8 @@ class SearchController < ApplicationController
   end
 
   def suggest
-    render json: Suggester.new(params)
+    suggester = Suggester.new(params)
+    suggester.execute!($artist_repository, $album_repository)
+    render json: suggester
   end
 end
