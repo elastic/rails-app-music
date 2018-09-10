@@ -66,6 +66,6 @@ end
 
 gem 'simple_form'
 gem 'elasticsearch'
-gem 'elasticsearch-model', git: 'https://github.com/elastic/elasticsearch-rails.git', branch: '5.x', require: 'elasticsearch/model'
-gem 'elasticsearch-persistence', git: 'https://github.com/elastic/elasticsearch-rails.git', branch: '5.x', require: 'elasticsearch/persistence/model'
-gem 'elasticsearch-rails', git: 'https://github.com/elastic/elasticsearch-rails.git', branch: '5.x'
+gem 'elasticsearch-model', '6.0.0'
+gem 'elasticsearch-persistence', '6.0.0'
+gem 'elasticsearch-rails', '6.0.0'
